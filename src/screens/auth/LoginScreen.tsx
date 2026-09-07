@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -46,63 +48,69 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Expense Manager</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Mail size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor="#94a3b8"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>Expense Manager</Text>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Lock size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#94a3b8"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Mail size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email Address"
+                placeholderTextColor="#94a3b8"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Lock size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#94a3b8"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonText}>Sign In</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.linkText}>
+                Don't have an account?{' '}
+                <Text style={styles.linkBold}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.linkText}>
-              Don't have an account?{' '}
-              <Text style={styles.linkBold}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };

@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -64,86 +66,92 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to manage your expenses</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <UserIcon size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#94a3b8"
-              value={name}
-              onChangeText={setName}
-            />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Sign up to manage your expenses</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Mail size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor="#94a3b8"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <UserIcon size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                placeholderTextColor="#94a3b8"
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Mail size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email Address"
+                placeholderTextColor="#94a3b8"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Lock size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#94a3b8"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Lock size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                placeholderTextColor="#94a3b8"
+                value={passwordConfirmation}
+                onChangeText={setPasswordConfirmation}
+                secureTextEntry
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleRegister}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonText}>Sign Up</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={styles.linkText}>
+                Already have an account?{' '}
+                <Text style={styles.linkBold}>Sign In</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          <View style={styles.inputContainer}>
-            <Lock size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#94a3b8"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Lock size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              placeholderTextColor="#94a3b8"
-              value={passwordConfirmation}
-              onChangeText={setPasswordConfirmation}
-              secureTextEntry
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign Up</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={styles.linkText}>
-              Already have an account?{' '}
-              <Text style={styles.linkBold}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };
