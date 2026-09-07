@@ -57,7 +57,8 @@ export interface Bill {
 }
 
 export interface AuthResponse {
-  token: string;
+  access_token: string;
+  token_type?: string;
   user: User;
   message?: string;
 }
