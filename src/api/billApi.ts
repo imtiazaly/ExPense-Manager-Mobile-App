@@ -27,6 +27,19 @@ export const billApi = {
     return response.data.data;
   },
 
+  updateBill: async (
+    id: number,
+    data: {
+      vendor_id: number;
+      bill_number: string;
+      bill_date: string;
+      status: 'paid' | 'unpaid' | 'pending';
+    },
+  ): Promise<Bill> => {
+    const response = await client.put<{ data: Bill }>(`/bills/${id}`, data);
+    return response.data.data;
+  },
+
   deleteBill: async (id: number): Promise<void> => {
     await client.delete(`/bills/${id}`);
   },

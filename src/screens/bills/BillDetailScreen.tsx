@@ -21,6 +21,9 @@ import {
   Mail,
   MapPin,
   Trash2,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'BillDetail'>;
@@ -29,6 +32,7 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { billId } = route.params;
   const [bill, setBill] = useState<Bill | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchBillDetails = async () => {
     try {
@@ -46,6 +50,32 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   useEffect(() => {
     fetchBillDetails();
   }, [billId]);
+
+  const handleUpdateStatus = async (
+    newStatus: 'paid' | 'unpaid' | 'pending',
+  ) => {
+    if (!bill) return;
+
+    try {
+      setUpdatingStatus(true);
+      const updated = await billApi.updateBill(bill.id, {
+        vendor_id: bill.vendor_id,
+        bill_number: bill.bill_number,
+        bill_date: bill.bill_date,
+        status: newStatus,
+      });
+
+      setBill(updated);
+      Alert.alert(
+        'Status Updated',
+        `Bill #${bill.bill_number} marked as ${newStatus.toUpperCase()}`,
+      );
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to update bill status.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleDelete = () => {
     if (!bill) return;
@@ -121,6 +151,91 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
       </View>
 
+      {/* Quick Status Action Card */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Update Bill Status</Text>
+        {updatingStatus ? (
+          <ActivityIndicator size="small" color="#2563eb" />
+        ) : (
+          <View style={styles.statusButtonsRow}>
+            <TouchableOpacity
+              style={[
+                styles.statusBtn,
+                {
+                  backgroundColor:
+                    bill.status === 'paid' ? '#15803d' : '#f0fdf4',
+                  borderColor: '#bbf7d0',
+                },
+              ]}
+              onPress={() => handleUpdateStatus('paid')}
+            >
+              <CheckCircle2
+                size={16}
+                color={bill.status === 'paid' ? '#ffffff' : '#15803d'}
+              />
+              <Text
+                style={[
+                  styles.statusBtnText,
+                  { color: bill.status === 'paid' ? '#ffffff' : '#15803d' },
+                ]}
+              >
+                PAID
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.statusBtn,
+                {
+                  backgroundColor:
+                    bill.status === 'pending' ? '#b45309' : '#fffbeb',
+                  borderColor: '#fde68a',
+                },
+              ]}
+              onPress={() => handleUpdateStatus('pending')}
+            >
+              <Clock
+                size={16}
+                color={bill.status === 'pending' ? '#ffffff' : '#b45309'}
+              />
+              <Text
+                style={[
+                  styles.statusBtnText,
+                  { color: bill.status === 'pending' ? '#ffffff' : '#b45309' },
+                ]}
+              >
+                PENDING
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.statusBtn,
+                {
+                  backgroundColor:
+                    bill.status === 'unpaid' ? '#b91c1c' : '#fef2f2',
+                  borderColor: '#fecaca',
+                },
+              ]}
+              onPress={() => handleUpdateStatus('unpaid')}
+            >
+              <XCircle
+                size={16}
+                color={bill.status === 'unpaid' ? '#ffffff' : '#b91c1c'}
+              />
+              <Text
+                style={[
+                  styles.statusBtnText,
+                  { color: bill.status === 'unpaid' ? '#ffffff' : '#b91c1c' },
+                ]}
+              >
+                UNPAID
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       {/* Vendor Details Card */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Vendor Information</Text>
@@ -152,7 +267,6 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
             )}
 
-            {/* Bank details if available */}
             {bill.vendor.bank_name && (
               <View style={styles.bankBox}>
                 <Building2
@@ -172,7 +286,7 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
       </View>
 
-      {/* Bill Items List Table */}
+      {/* Bill Items Table */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Bill Line Items</Text>
 
@@ -251,6 +365,18 @@ const styles = StyleSheet.create({
   dateRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   dateText: { fontSize: 14, color: '#64748b' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  statusButtonsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  statusBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+  },
+  statusBtnText: { fontWeight: '700', fontSize: 13 },
   vendorDetails: { gap: 8, marginTop: 4 },
   vendorName: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
