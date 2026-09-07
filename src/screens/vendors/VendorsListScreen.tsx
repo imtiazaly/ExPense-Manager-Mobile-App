@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Keyboard,
 } from 'react-native';
 import { Vendor } from '../../types';
 import { vendorApi } from '../../api/vendorApi';
@@ -30,6 +31,22 @@ export const VendorsListScreen = () => {
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Dynamic Keyboard Listener
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', e => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const fetchVendors = async (query = '') => {
     try {
@@ -134,7 +151,7 @@ export const VendorsListScreen = () => {
         />
       </View>
 
-      {/* Vendors List */}
+      {/* Vendors List with Dynamic Keyboard Padding */}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#2563eb" />
@@ -144,7 +161,12 @@ export const VendorsListScreen = () => {
           data={vendors}
           keyExtractor={item => item.id.toString()}
           renderItem={renderVendorItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: keyboardHeight + 100 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
@@ -192,7 +214,7 @@ const styles = StyleSheet.create({
     height: 46,
   },
   searchInput: { flex: 1, color: '#0f172a', fontSize: 15 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 80, gap: 12 },
+  listContent: { paddingHorizontal: 16, gap: 12 },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
