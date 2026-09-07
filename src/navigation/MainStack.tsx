@@ -7,6 +7,7 @@ import { CreateBillScreen } from '../screens/bills/CreateBillScreen';
 import { VendorsListScreen } from '../screens/vendors/VendorsListScreen';
 import { ItemsListScreen } from '../screens/items/ItemsListScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { BillDetailScreen } from '../screens/bills/BillDetailScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -27,6 +28,11 @@ export const MainStack = () => {
         name="CreateBill"
         component={CreateBillScreen}
         options={{ title: 'New Bill' }}
+      />
+      <Stack.Screen
+        name="BillDetail"
+        component={BillDetailScreen}
+        options={{ title: 'Bill Details' }}
       />
       <Stack.Screen
         name="VendorsList"

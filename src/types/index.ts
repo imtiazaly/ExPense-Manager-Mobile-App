@@ -46,7 +46,7 @@ export interface BillItem {
   item_id: number;
   quantity: number;
   unit_price: number;
-  total_price: number;
+  total_price?: number;
   item?: Item;
 }
 
@@ -56,9 +56,9 @@ export interface Bill {
   vendor_id: number;
   bill_number: string;
   bill_date: string;
-  due_date: string;
-  total_amount: number;
-  status: 'paid' | 'pending' | 'overdue';
+  subtotal: number;
+  grand_total: number;
+  status: 'paid' | 'unpaid' | 'pending';
   vendor?: Vendor;
   items?: BillItem[];
   created_at?: string;
