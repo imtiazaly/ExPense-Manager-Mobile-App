@@ -11,13 +11,18 @@ export interface User {
   created_at?: string;
   updated_at?: string;
 }
+
 export interface Vendor {
   id: number;
-  user_id: number;
   name: string;
-  email?: string | null;
   phone?: string | null;
+  email?: string | null;
   address?: string | null;
+  bank_name?: string | null;
+  account_title?: string | null;
+  account_number?: string | null;
+  iban?: string | null;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
