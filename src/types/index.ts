@@ -29,10 +29,13 @@ export interface Vendor {
 
 export interface Item {
   id: number;
-  user_id: number;
   name: string;
-  unit_price: number;
+  unit?: string | null;
+  current_price: number;
+  previous_price?: number | null;
+  average_price?: number | null;
   description?: string | null;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
