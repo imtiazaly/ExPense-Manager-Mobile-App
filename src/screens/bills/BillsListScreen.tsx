@@ -22,9 +22,12 @@ type Props = NativeStackScreenProps<MainStackParamList, 'BillsList'>;
 export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
@@ -40,26 +43,56 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
     };
   }, []);
 
-  const fetchBills = async () => {
+  const fetchBills = async (pageNum = 1, isRefresh = false) => {
     try {
+      if (pageNum === 1 && !isRefresh) setLoading(true);
+
       const statusParam = selectedStatus === 'all' ? undefined : selectedStatus;
-      const data = await billApi.getBills({ search, status: statusParam });
-      setBills(data);
+      const res = await billApi.getBills({
+        search,
+        status: statusParam,
+        page: pageNum,
+        per_page: 20,
+      });
+
+      if (pageNum === 1) {
+        setBills(res.data);
+      } else {
+        setBills(prev => [...prev, ...res.data]);
+      }
+
+      if (res.meta) {
+        setHasMore(res.meta.current_page < res.meta.last_page);
+      } else {
+        setHasMore(false);
+      }
     } catch (error: any) {
       console.log('Error fetching bills:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchBills();
+    setPage(1);
+    fetchBills(1);
   }, [search, selectedStatus]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchBills();
+    setPage(1);
+    fetchBills(1, true);
+  };
+
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore && !loading) {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchBills(nextPage);
+    }
   };
 
   const handleDelete = (bill: Bill) => {
@@ -74,7 +107,7 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
           onPress: async () => {
             try {
               await billApi.deleteBill(bill.id);
-              fetchBills();
+              fetchBills(1);
             } catch (error: any) {
               Alert.alert('Error', 'Could not delete bill.');
             }
@@ -198,8 +231,17 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
           ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 16 }}>
+                <ActivityIndicator size="small" color="#2563eb" />
+              </View>
+            ) : undefined
           }
           ListEmptyComponent={
             <View style={styles.emptyState}>

@@ -14,6 +14,7 @@ export interface User {
 
 export interface Vendor {
   id: number;
+  user_id?: number;
   name: string;
   phone?: string | null;
   email?: string | null;

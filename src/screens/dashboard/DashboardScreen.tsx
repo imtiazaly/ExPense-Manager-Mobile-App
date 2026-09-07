@@ -38,8 +38,10 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadDashboardData = async () => {
     try {
-      const bills = await billApi.getBills();
-      setTotalBillsCount(bills.length);
+      const res = await billApi.getBills({ per_page: 100 });
+      const bills = res.data || [];
+
+      setTotalBillsCount(res.meta?.total || bills.length);
       setRecentBills(bills.slice(0, 4));
 
       // Calculate Totals
