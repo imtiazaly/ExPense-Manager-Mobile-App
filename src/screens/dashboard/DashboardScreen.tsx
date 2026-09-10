@@ -11,21 +11,16 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { billApi } from '../../api/billApi';
 import { Bill } from '../../types';
+import { Receipt, TrendingUp, Clock, ChevronRight } from 'lucide-react-native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../navigation/types';
-import {
-  Users,
-  Package,
-  Receipt,
-  PlusCircle,
-  UserCheck,
-  LogOut,
-  TrendingUp,
-  Clock,
-  ChevronRight,
-} from 'lucide-react-native';
+import { MainTabParamList, MainStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<MainStackParamList, 'Dashboard'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'Dashboard'>,
+  NativeStackScreenProps<MainStackParamList>
+>;
 
 export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const { user, logout } = useAuth();
@@ -125,56 +120,6 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Quick Actions Title */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-      {/* Navigation Grid */}
-      <View style={styles.grid}>
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('CreateBill')}
-        >
-          <View style={[styles.iconBox, { backgroundColor: '#dbeafe' }]}>
-            <PlusCircle size={24} color="#2563eb" />
-          </View>
-          <Text style={styles.cardTitle}>New Bill</Text>
-          <Text style={styles.cardSub}>Create expense bill</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('BillsList')}
-        >
-          <View style={[styles.iconBox, { backgroundColor: '#fef3c7' }]}>
-            <Receipt size={24} color="#d97706" />
-          </View>
-          <Text style={styles.cardTitle}>All Bills ({totalBillsCount})</Text>
-          <Text style={styles.cardSub}>Manage expenses</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('VendorsList')}
-        >
-          <View style={[styles.iconBox, { backgroundColor: '#dcfce7' }]}>
-            <Users size={24} color="#16a34a" />
-          </View>
-          <Text style={styles.cardTitle}>Vendors</Text>
-          <Text style={styles.cardSub}>Suppliers list</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('ItemsList')}
-        >
-          <View style={[styles.iconBox, { backgroundColor: '#f3e8ff' }]}>
-            <Package size={24} color="#9333ea" />
-          </View>
-          <Text style={styles.cardTitle}>Items</Text>
-          <Text style={styles.cardSub}>Products catalog</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Recent Bills Section */}
       <View style={styles.headerBetween}>
         <Text style={styles.sectionTitle}>Recent Expenses</Text>
@@ -222,26 +167,6 @@ export const DashboardScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
       </View>
-
-      {/* Account Settings & Profile */}
-      <View style={styles.accountSection}>
-        <TouchableOpacity
-          style={styles.listRow}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <View style={styles.rowLeft}>
-            <UserCheck size={20} color="#2563eb" />
-            <Text style={styles.rowText}>My Profile & Bank Details</Text>
-          </View>
-          <ChevronRight size={20} color="#94a3b8" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <LogOut size={20} color="#dc2626" style={{ marginRight: 8 }} />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };

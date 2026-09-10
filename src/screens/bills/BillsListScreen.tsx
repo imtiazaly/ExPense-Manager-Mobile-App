@@ -13,11 +13,16 @@ import {
 } from 'react-native';
 import { Bill } from '../../types';
 import { billApi } from '../../api/billApi';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../navigation/types';
+import { MainTabParamList, MainStackParamList } from '../../navigation/types';
 import { Search, Plus, Receipt, Calendar, Trash2 } from 'lucide-react-native';
 
-type Props = NativeStackScreenProps<MainStackParamList, 'BillsList'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, 'BillsList'>,
+  NativeStackScreenProps<MainStackParamList>
+>;
 
 export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
   const [bills, setBills] = useState<Bill[]>([]);
