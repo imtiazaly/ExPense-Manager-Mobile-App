@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,19 +16,21 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
-import { Lock, Mail } from 'lucide-react-native';
+import { Lock, Mail, Eye, EyeOff } from 'lucide-react-native';
+import { showErrorSnackbar } from '../../utils/snackbar';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Validation Error', 'Please enter email and password.');
+      showErrorSnackbar('Please enter email and password.');
       return;
     }
 
@@ -39,7 +41,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       const message =
         error.response?.data?.message ||
         'Invalid email or password. Please try again.';
-      Alert.alert('Login Failed', message);
+      showErrorSnackbar(message);
     } finally {
       setLoading(false);
     }
@@ -57,6 +59,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
+            <Image
+              source={require('../../../assets/logo/log1-removebg.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={styles.title}>Expense Manager</Text>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
@@ -83,14 +90,25 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 placeholderTextColor="#94a3b8"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color="#64748b" />
+                ) : (
+                  <Eye size={20} color="#64748b" />
+                )}
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
               style={styles.button}
               onPress={handleLogin}
               disabled={loading}
+              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color="#ffffff" />
@@ -118,9 +136,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#f8fafc' },
   container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  header: { marginBottom: 32, alignItems: 'center' },
+  header: { marginBottom: 28, alignItems: 'center' },
+  logo: { width: 90, height: 90, marginBottom: 12 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1e293b' },
-  subtitle: { fontSize: 14, color: '#64748b', marginTop: 8 },
+  subtitle: { fontSize: 14, color: '#64748b', marginTop: 6 },
   form: { gap: 16 },
   inputContainer: {
     flexDirection: 'row',

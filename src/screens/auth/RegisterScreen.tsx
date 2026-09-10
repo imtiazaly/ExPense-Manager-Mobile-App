@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,7 +16,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
-import { Lock, Mail, User as UserIcon } from 'lucide-react-native';
+import { Lock, Mail, User as UserIcon, Eye, EyeOff } from 'lucide-react-native';
+import { showErrorSnackbar } from '../../utils/snackbar';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -25,17 +26,19 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Validation Error', 'Please fill in all required fields.');
+      showErrorSnackbar('Please fill in all required fields.');
       return;
     }
 
     if (password !== passwordConfirmation) {
-      Alert.alert('Validation Error', 'Passwords do not match.');
+      showErrorSnackbar('Passwords do not match.');
       return;
     }
 
@@ -59,7 +62,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       } else if (error.message) {
         message = error.message;
       }
-      Alert.alert('Registration Failed', message);
+      showErrorSnackbar(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,6 +80,11 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
+            <Image
+              source={require('../../../assets/logo/log1-removebg.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Sign up to manage your expenses</Text>
           </View>
@@ -112,8 +122,18 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 placeholderTextColor="#94a3b8"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color="#64748b" />
+                ) : (
+                  <Eye size={20} color="#64748b" />
+                )}
+              </TouchableOpacity>
             </View>
 
             <View style={styles.inputContainer}>
@@ -124,14 +144,25 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 placeholderTextColor="#94a3b8"
                 value={passwordConfirmation}
                 onChangeText={setPasswordConfirmation}
-                secureTextEntry
+                secureTextEntry={!showConfirmPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff size={20} color="#64748b" />
+                ) : (
+                  <Eye size={20} color="#64748b" />
+                )}
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
               style={styles.button}
               onPress={handleRegister}
               disabled={loading}
+              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color="#ffffff" />
@@ -159,9 +190,10 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#f8fafc' },
   container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  header: { marginBottom: 32, alignItems: 'center' },
+  header: { marginBottom: 28, alignItems: 'center' },
+  logo: { width: 90, height: 90, marginBottom: 12 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1e293b' },
-  subtitle: { fontSize: 14, color: '#64748b', marginTop: 8 },
+  subtitle: { fontSize: 14, color: '#64748b', marginTop: 6 },
   form: { gap: 16 },
   inputContainer: {
     flexDirection: 'row',
