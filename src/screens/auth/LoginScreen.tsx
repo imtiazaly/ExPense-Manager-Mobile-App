@@ -64,7 +64,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Expense Manager</Text>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.title, { color: '#1a425c' }]}>ExPense</Text>
+              <Text style={[styles.title, { color: '#0cba81' }]}>Manager</Text>
+            </View>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 
@@ -138,6 +141,7 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   header: { marginBottom: 28, alignItems: 'center' },
   logo: { width: 90, height: 90, marginBottom: 12 },
+  titleContainer: { flexDirection: 'row', alignItems: 'center' },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1e293b' },
   subtitle: { fontSize: 14, color: '#64748b', marginTop: 6 },
   form: { gap: 16 },
