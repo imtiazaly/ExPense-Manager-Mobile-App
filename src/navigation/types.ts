@@ -3,12 +3,16 @@ export type AuthStackParamList = {
   Register: undefined;
 };
 
-export type MainStackParamList = {
-  Dashboard: undefined;
+export type MainTabParamList = {
   BillsList: undefined;
+  ItemsList: undefined;
+  Dashboard: undefined;
+  VendorsList: undefined;
+  Profile: undefined;
+};
+
+export type MainStackParamList = {
+  MainTabs: undefined;
   CreateBill: undefined;
   BillDetail: { billId: number };
-  VendorsList: undefined;
-  ItemsList: undefined;
-  Profile: undefined;
 };

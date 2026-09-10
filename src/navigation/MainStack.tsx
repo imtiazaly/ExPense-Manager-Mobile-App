@@ -1,12 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainStackParamList } from './types';
-import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
-import { BillsListScreen } from '../screens/bills/BillsListScreen';
+import { MainTabs } from './MainTabs';
 import { CreateBillScreen } from '../screens/bills/CreateBillScreen';
-import { VendorsListScreen } from '../screens/vendors/VendorsListScreen';
-import { ItemsListScreen } from '../screens/items/ItemsListScreen';
-import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { BillDetailScreen } from '../screens/bills/BillDetailScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -15,14 +11,9 @@ export const MainStack = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{ title: 'Expense Manager' }}
-      />
-      <Stack.Screen
-        name="BillsList"
-        component={BillsListScreen}
-        options={{ title: 'All Bills' }}
+        name="MainTabs"
+        component={MainTabs}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="CreateBill"
@@ -33,21 +24,6 @@ export const MainStack = () => {
         name="BillDetail"
         component={BillDetailScreen}
         options={{ title: 'Bill Details' }}
-      />
-      <Stack.Screen
-        name="VendorsList"
-        component={VendorsListScreen}
-        options={{ title: 'Vendors' }}
-      />
-      <Stack.Screen
-        name="ItemsList"
-        component={ItemsListScreen}
-        options={{ title: 'Items Catalog' }}
-      />
-      <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ title: 'My Profile' }}
       />
     </Stack.Navigator>
   );
