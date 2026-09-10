@@ -81,7 +81,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         >
           <View style={styles.header}>
             <Image
-              source={require('../../../assets/logo/log1-removebg.png')}
+              source={require('../../assets/logo/log1-removebg.png')}
               style={styles.logo}
               resizeMode="contain"
             />

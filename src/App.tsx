@@ -1,8 +1,8 @@
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from './src/context/AuthContext';
-import { SyncProvider } from './src/context/SyncContext';
-import { AppNavigator } from './src/navigation/AppNavigator';
+import { AuthProvider } from './context/AuthContext';
+import { SyncProvider } from './context/SyncContext';
+import { AppNavigator } from './navigation/AppNavigator';
 import { StatusBar } from 'react-native';
 
 function App(): React.JSX.Element {
