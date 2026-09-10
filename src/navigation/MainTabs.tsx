@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
@@ -23,6 +23,8 @@ export const MainTabs = () => {
       initialRouteName="Dashboard"
       screenOptions={{
         headerShown: true,
+        headerTitleStyle: styles.defaultHeaderTitle,
+        headerStyle: styles.defaultHeader,
         tabBarShowLabel: true,
         tabBarActiveTintColor: '#2563eb',
         tabBarInactiveTintColor: '#94a3b8',
@@ -56,12 +58,24 @@ export const MainTabs = () => {
         }}
       />
 
-      {/* 3. Dashboard (Center Curved Elevated Button) */}
+      {/* 3. Dashboard (Custom Dual-Tone Brand Header) */}
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
         options={{
-          title: 'Expense Manager',
+          headerTitle: () => (
+            <View style={styles.headerTitleBox}>
+              <Image
+                source={require('../../assets/logo/log1-removebg.png')}
+                style={styles.headerLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.headerTitleText}>
+                <Text style={{ color: '#1a425c' }}>ExPense</Text>
+                <Text style={{ color: '#0cba81' }}>Manager</Text>
+              </Text>
+            </View>
+          ),
           tabBarLabel: 'Dashboard',
           tabBarButton: props => (
             <TouchableOpacity
@@ -108,6 +122,33 @@ export const MainTabs = () => {
 };
 
 const styles = StyleSheet.create({
+  defaultHeader: {
+    backgroundColor: '#ffffff',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  defaultHeaderTitle: {
+    color: '#1e293b',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  headerTitleBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerLogo: {
+    width: 34,
+    height: 34,
+  },
+  headerTitleText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1e293b', // Login page matching heading text color
+  },
   tabBar: {
     height: 64,
     backgroundColor: '#ffffff',
