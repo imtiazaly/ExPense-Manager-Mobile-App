@@ -153,6 +153,23 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
+  const updateUnitPrice = (itemId: number, priceStr: string) => {
+    const price = Number(priceStr);
+    setLineItems(
+      lineItems.map(li => {
+        if (li.item_id === itemId) {
+          const validPrice = isNaN(price) || price < 0 ? 0 : price;
+          return {
+            ...li,
+            unit_price: validPrice,
+            total_price: li.quantity * validPrice,
+          };
+        }
+        return li;
+      }),
+    );
+  };
+
   const removeLineItem = (itemId: number) => {
     setLineItems(lineItems.filter(li => li.item_id !== itemId));
   };
@@ -256,12 +273,15 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
     >
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+        showsVerticalScrollIndicator={false}
       >
         {/* Purchaser & Vendor Section */}
         <View style={styles.card}>
@@ -564,13 +584,23 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
 
           {lineItems.map(item => (
             <View key={item.item_id} style={styles.lineItemRow}>
-              <View style={{ flex: 2 }}>
+              {/* Item Name */}
+              <View style={{ flex: 1.3 }}>
                 <Text style={styles.lineItemName}>{item.name}</Text>
-                <Text style={styles.lineItemRate}>
-                  @ RS {item.unit_price} each
-                </Text>
               </View>
 
+              {/* Editable Rate / Price */}
+              <View style={styles.qtyBox}>
+                <Text style={styles.qtyLabel}>Rate:</Text>
+                <TextInput
+                  style={styles.rateInput}
+                  value={item.unit_price.toString()}
+                  onChangeText={txt => updateUnitPrice(item.item_id, txt)}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              {/* Editable Quantity */}
               <View style={styles.qtyBox}>
                 <Text style={styles.qtyLabel}>Qty:</Text>
                 <TextInput
@@ -581,13 +611,15 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
                 />
               </View>
 
-              <Text style={styles.lineItemTotal}>
-                RS {item.total_price.toLocaleString()}
-              </Text>
-
-              <TouchableOpacity onPress={() => removeLineItem(item.item_id)}>
-                <Trash2 size={18} color="#dc2626" />
-              </TouchableOpacity>
+              {/* Item Total & Delete */}
+              <View style={styles.rowRightBox}>
+                <Text style={styles.lineItemTotal}>
+                  RS {item.total_price.toLocaleString()}
+                </Text>
+                <TouchableOpacity onPress={() => removeLineItem(item.item_id)}>
+                  <Trash2 size={18} color="#dc2626" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
 
@@ -623,7 +655,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  content: { padding: 16, gap: 16, paddingBottom: 40 },
+  content: { padding: 16, gap: 16, paddingBottom: 160 },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
@@ -793,6 +825,23 @@ const styles = StyleSheet.create({
   },
   lineItemName: { fontWeight: '700', color: '#1e293b', fontSize: 14 },
   lineItemRate: { fontSize: 12, color: '#64748b' },
+  rateInput: {
+    width: 60,
+    height: 34,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 6,
+    textAlign: 'center',
+    color: '#0f172a',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  rowRightBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   qtyBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   qtyLabel: { fontSize: 12, color: '#64748b' },
   qtyInput: {
