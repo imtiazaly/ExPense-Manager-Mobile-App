@@ -26,6 +26,8 @@ import {
   ChevronUp,
   User,
   PackagePlus,
+  Search,
+  X,
 } from 'lucide-react-native';
 import { showErrorSnackbar, showSuccessSnackbar } from '../../utils/snackbar';
 
@@ -60,6 +62,8 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
   const [lineItems, setLineItems] = useState<LineItemState[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const [itemSearch, setItemSearch] = useState('');
 
   // Collapsible Add Item Form States
   const [isAddItemExpanded, setIsAddItemExpanded] = useState(false);
@@ -119,6 +123,17 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
         },
       ]);
     }
+  };
+
+  // Real-time catalog items filter logic
+  const filteredItems = availableItems.filter(item =>
+    item.name.toLowerCase().includes(itemSearch.trim().toLowerCase()),
+  );
+
+  // Auto pre-fill collapsible form with search text
+  const handleQuickPreFillNewItem = () => {
+    setNewItemName(itemSearch.trim());
+    setIsAddItemExpanded(true);
   };
 
   const updateQuantity = (itemId: number, qtyStr: string) => {
@@ -376,30 +391,81 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Add Items Section */}
+        {/* Add Items Section with Real-time Search */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Available Catalog Items (Tap to Add)
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-          >
-            {availableItems.map(item => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.itemChip}
-                onPress={() => addLineItem(item)}
-              >
-                <Plus size={14} color="#2563eb" style={{ marginRight: 4 }} />
-                <Text style={styles.itemChipText}>{item.name}</Text>
-                <Text style={styles.itemChipPrice}>
-                  RS {item.current_price}
+          <View style={styles.headerBetween}>
+            <Text style={styles.sectionTitle}>
+              Catalog Items ({filteredItems.length})
+            </Text>
+            {itemSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setItemSearch('')}>
+                <Text
+                  style={{ fontSize: 12, color: '#dc2626', fontWeight: '600' }}
+                >
+                  Clear Search
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            )}
+          </View>
+
+          {/* Quick Search Input */}
+          <View style={styles.inputWithIcon}>
+            <Search size={18} color="#64748b" style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.innerInput}
+              placeholder="Search items by name..."
+              placeholderTextColor="#94a3b8"
+              value={itemSearch}
+              onChangeText={setItemSearch}
+            />
+            {itemSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setItemSearch('')}>
+                <X size={16} color="#64748b" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Catalog Items Chips */}
+          {filteredItems.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+            >
+              {filteredItems.map(item => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.itemChip}
+                  onPress={() => addLineItem(item)}
+                >
+                  <Plus size={14} color="#2563eb" style={{ marginRight: 4 }} />
+                  <Text style={styles.itemChipText}>{item.name}</Text>
+                  <Text style={styles.itemChipPrice}>
+                    RS {item.current_price}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.noResultBox}>
+              <Text style={styles.noResultText}>
+                No item found matching "{itemSearch}"
+              </Text>
+              <TouchableOpacity
+                style={styles.quickAddBtn}
+                onPress={handleQuickPreFillNewItem}
+              >
+                <PackagePlus
+                  size={16}
+                  color="#16a34a"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.quickAddBtnText}>
+                  + Add "{itemSearch}" to Catalog
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Collapsible Tab for Adding New Item */}
           <TouchableOpacity
@@ -640,6 +706,42 @@ const styles = StyleSheet.create({
   },
   itemChipText: { fontWeight: '600', color: '#1e40af', fontSize: 13 },
   itemChipPrice: { color: '#3b82f6', fontSize: 12, marginLeft: 6 },
+
+  headerBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  noResultBox: {
+    padding: 14,
+    backgroundColor: '#fef2f2',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 4,
+  },
+  noResultText: {
+    color: '#991b1b',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  quickAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#86efac',
+  },
+  quickAddBtnText: {
+    color: '#166534',
+    fontWeight: '700',
+    fontSize: 13,
+  },
 
   /* Collapsible Add Item Form */
   collapsibleHeader: {
