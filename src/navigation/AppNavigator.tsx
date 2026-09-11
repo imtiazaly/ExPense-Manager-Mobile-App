@@ -18,8 +18,8 @@ export const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      {/* {token ? <MainStack /> : <AuthStack />} */}
-      <MainStack />
+      {token ? <MainStack /> : <AuthStack />}
+      {/* <MainStack /> */}
     </NavigationContainer>
   );
 };

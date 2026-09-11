@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -15,9 +14,19 @@ import { Vendor, Item } from '../../types';
 import { vendorApi } from '../../api/vendorApi';
 import { itemApi } from '../../api/itemApi';
 import { billApi } from '../../api/billApi';
+import { useAuth } from '../../context/AuthContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
+import {
+  Plus,
+  Trash2,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  User,
+  PackagePlus,
+} from 'lucide-react-native';
+import { showErrorSnackbar, showSuccessSnackbar } from '../../utils/snackbar';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'CreateBill'>;
 
@@ -30,6 +39,10 @@ interface LineItemState {
 }
 
 export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
+  const { user } = useAuth();
+
+  // Form States
+  const [purchaserName, setPurchaserName] = useState(user?.name || '');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
@@ -46,6 +59,14 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Collapsible Add Item Form States
+  const [isAddItemExpanded, setIsAddItemExpanded] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemPrice, setNewItemPrice] = useState('');
+  const [newItemUnit, setNewItemUnit] = useState('pcs');
+  const [newItemDescription, setNewItemDescription] = useState('');
+  const [savingNewItem, setSavingNewItem] = useState(false);
+
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -58,7 +79,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
         setAvailableItems(iData);
         if (vData.length > 0) setSelectedVendorId(vData[0].id);
       } catch (e) {
-        Alert.alert('Error', 'Failed to load vendors or items.');
+        showErrorSnackbar('Failed to load vendors or items.');
       } finally {
         setLoading(false);
       }
@@ -116,24 +137,67 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
     setLineItems(lineItems.filter(li => li.item_id !== itemId));
   };
 
+  // Create & Insert New Item into DB
+  const handleCreateNewItem = async () => {
+    if (!newItemName.trim()) {
+      showErrorSnackbar('Please enter new item name.');
+      return;
+    }
+    const priceNum = Number(newItemPrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      showErrorSnackbar('Please enter a valid price for the item.');
+      return;
+    }
+
+    try {
+      setSavingNewItem(true);
+      const createdItem = await itemApi.createItem({
+        name: newItemName.trim(),
+        current_price: priceNum,
+        unit: newItemUnit.trim() || 'pcs',
+        description: newItemDescription.trim(),
+      });
+
+      // Update local available items list
+      setAvailableItems(prev => [createdItem, ...prev]);
+
+      // Automatically add newly created item to current bill
+      addLineItem(createdItem);
+
+      // Reset & Collapse Form
+      setNewItemName('');
+      setNewItemPrice('');
+      setNewItemDescription('');
+      setIsAddItemExpanded(false);
+
+      showSuccessSnackbar(`Item "${createdItem.name}" saved & added to bill!`);
+    } catch (error: any) {
+      showErrorSnackbar('Failed to create new item. Try again.');
+    } finally {
+      setSavingNewItem(false);
+    }
+  };
+
   const grandTotal = lineItems.reduce((acc, curr) => acc + curr.total_price, 0);
 
   const handleSubmit = async () => {
+    if (!purchaserName.trim()) {
+      showErrorSnackbar('Please enter or select purchaser name.');
+      return;
+    }
+
     if (!selectedVendorId) {
-      Alert.alert('Validation Error', 'Please select a vendor.');
+      showErrorSnackbar('Please select a vendor.');
       return;
     }
 
     if (!billNumber.trim()) {
-      Alert.alert('Validation Error', 'Please enter a bill number.');
+      showErrorSnackbar('Please enter a bill number.');
       return;
     }
 
     if (lineItems.length === 0) {
-      Alert.alert(
-        'Validation Error',
-        'Please add at least one item to the bill.',
-      );
+      showErrorSnackbar('Please add at least one item to the bill.');
       return;
     }
 
@@ -151,11 +215,11 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
         })),
       });
 
-      Alert.alert('Success', 'Bill created successfully!');
+      showSuccessSnackbar('Bill created successfully!');
       navigation.goBack();
     } catch (error: any) {
       const msg = error.response?.data?.message || 'Failed to create bill.';
-      Alert.alert('Error', msg);
+      showErrorSnackbar(msg);
     } finally {
       setSubmitting(false);
     }
@@ -179,9 +243,45 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Vendor Selector */}
+        {/* Purchaser & Vendor Section */}
         <View style={styles.card}>
-          <Text style={styles.label}>Select Vendor *</Text>
+          {/* Purchaser Name Input */}
+          <Text style={styles.label}>Purchaser Name (Kharidar) *</Text>
+          <View style={styles.inputWithIcon}>
+            <User size={18} color="#64748b" style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.innerInput}
+              placeholder="Enter or select purchaser name"
+              placeholderTextColor="#94a3b8"
+              value={purchaserName}
+              onChangeText={setPurchaserName}
+            />
+          </View>
+
+          {/* Quick Purchaser Selection Chip */}
+          {user?.name && (
+            <View style={styles.chipRow}>
+              <TouchableOpacity
+                style={[
+                  styles.miniChip,
+                  purchaserName === user.name && styles.activeMiniChip,
+                ]}
+                onPress={() => setPurchaserName(user.name)}
+              >
+                <Text
+                  style={[
+                    styles.miniChipText,
+                    purchaserName === user.name && styles.activeMiniChipText,
+                  ]}
+                >
+                  Use My Name ({user.name})
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Vendor Selector */}
+          <Text style={styles.label}>Select Vendor (Supplier) *</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -208,6 +308,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
             ))}
           </ScrollView>
 
+          {/* Bill Number & Date */}
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Bill Number *</Text>
@@ -227,6 +328,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
+          {/* Bill Status */}
           <Text style={styles.label}>Bill Status</Text>
           <View style={styles.statusRow}>
             {(['pending', 'paid', 'unpaid'] as const).map(st => (
@@ -253,7 +355,9 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Add Items Section */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Available Items (Tap to Add)</Text>
+          <Text style={styles.sectionTitle}>
+            Available Catalog Items (Tap to Add)
+          </Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -273,6 +377,94 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
               </TouchableOpacity>
             ))}
           </ScrollView>
+
+          {/* Collapsible Tab for Adding New Item */}
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => setIsAddItemExpanded(!isAddItemExpanded)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.collapsibleTitleRow}>
+              <PackagePlus
+                size={18}
+                color="#2563eb"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.collapsibleHeaderText}>
+                + Item not in catalog? Add New Item
+              </Text>
+            </View>
+            {isAddItemExpanded ? (
+              <ChevronUp size={18} color="#2563eb" />
+            ) : (
+              <ChevronDown size={18} color="#2563eb" />
+            )}
+          </TouchableOpacity>
+
+          {isAddItemExpanded && (
+            <View style={styles.collapsibleForm}>
+              <Text style={styles.formSubTitle}>
+                Create & Insert New Item into Database
+              </Text>
+
+              <Text style={styles.label}>Item Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Cement Bag, Steel Rod"
+                placeholderTextColor="#94a3b8"
+                value={newItemName}
+                onChangeText={setNewItemName}
+              />
+
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Price / Rate (RS) *</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. 1200"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="numeric"
+                    value={newItemPrice}
+                    onChangeText={setNewItemPrice}
+                  />
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Unit</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="pcs / kg / box"
+                    placeholderTextColor="#94a3b8"
+                    value={newItemUnit}
+                    onChangeText={setNewItemUnit}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.label}>Description (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Item specification..."
+                placeholderTextColor="#94a3b8"
+                value={newItemDescription}
+                onChangeText={setNewItemDescription}
+              />
+
+              <TouchableOpacity
+                style={styles.saveItemBtn}
+                onPress={handleCreateNewItem}
+                disabled={savingNewItem}
+              >
+                {savingNewItem ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.saveItemBtnText}>
+                    Save Item & Add to Bill
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Selected Bill Line Items */}
@@ -363,6 +555,32 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     marginTop: 4,
   },
+  inputWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+    marginTop: 4,
+  },
+  innerInput: {
+    flex: 1,
+    color: '#0f172a',
+    fontSize: 14,
+  },
+  chipRow: { flexDirection: 'row', marginTop: 4 },
+  miniChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: '#e2e8f0',
+  },
+  activeMiniChip: { backgroundColor: '#dbeafe' },
+  miniChipText: { fontSize: 12, color: '#475569', fontWeight: '600' },
+  activeMiniChipText: { color: '#1e40af' },
   row: { flexDirection: 'row', gap: 12 },
   horizontalScroll: { flexDirection: 'row', marginVertical: 4 },
   chip: {
@@ -399,6 +617,46 @@ const styles = StyleSheet.create({
   },
   itemChipText: { fontWeight: '600', color: '#1e40af', fontSize: 13 },
   itemChipPrice: { color: '#3b82f6', fontSize: 12, marginLeft: 6 },
+
+  /* Collapsible Add Item Form */
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  collapsibleTitleRow: { flexDirection: 'row', alignItems: 'center' },
+  collapsibleHeaderText: { fontSize: 14, fontWeight: '700', color: '#0369a1' },
+  collapsibleForm: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    padding: 14,
+    gap: 10,
+    marginTop: 4,
+  },
+  formSubTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+    marginBottom: 2,
+  },
+  saveItemBtn: {
+    backgroundColor: '#16a34a',
+    height: 42,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  saveItemBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
+
   lineItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
