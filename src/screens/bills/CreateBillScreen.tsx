@@ -10,7 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Vendor, Item } from '../../types';
+import { Vendor, Item, User as Purchaser } from '../../types';
+import { authApi } from '../../api/authApi';
 import { vendorApi } from '../../api/vendorApi';
 import { itemApi } from '../../api/itemApi';
 import { billApi } from '../../api/billApi';
@@ -42,6 +43,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
 
   // Form States
+  const [usersList, setUsersList] = useState<Purchaser[]>([]);
   const [purchaserName, setPurchaserName] = useState(user?.name || '');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
@@ -71,15 +73,18 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        const [vData, iData] = await Promise.all([
+        const [vData, iData, uData] = await Promise.all([
           vendorApi.getVendors({ active_only: true }),
           itemApi.getItems({ active_only: true }),
+          authApi.getUsers(),
         ]);
         setVendors(vData);
         setAvailableItems(iData);
+        setUsersList(uData);
+        console.log('Fetched Users:', uData);
         if (vData.length > 0) setSelectedVendorId(vData[0].id);
       } catch (e) {
-        showErrorSnackbar('Failed to load vendors or items.');
+        showErrorSnackbar('Failed to load initial data.');
       } finally {
         setLoading(false);
       }
@@ -258,27 +263,45 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
             />
           </View>
 
-          {/* Quick Purchaser Selection Chip */}
-          {user?.name && (
-            <View style={styles.chipRow}>
-              <TouchableOpacity
-                style={[
-                  styles.miniChip,
-                  purchaserName === user.name && styles.activeMiniChip,
-                ]}
-                onPress={() => setPurchaserName(user.name)}
-              >
-                <Text
+          {/* Select Registered Purchaser Chips */}
+          <View style={{ marginTop: 6 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                color: '#64748b',
+                fontWeight: '600',
+                marginBottom: 4,
+              }}
+            >
+              Select Registered Purchaser:
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+            >
+              {/* Database Users List */}
+              {usersList.map(u => (
+                <TouchableOpacity
+                  key={u.id}
                   style={[
-                    styles.miniChipText,
-                    purchaserName === user.name && styles.activeMiniChipText,
+                    styles.chip,
+                    purchaserName === u.name && styles.activeChip,
                   ]}
+                  onPress={() => setPurchaserName(u.name)}
                 >
-                  Use My Name ({user.name})
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      purchaserName === u.name && styles.activeChipText,
+                    ]}
+                  >
+                    {u.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
           {/* Vendor Selector */}
           <Text style={styles.label}>Select Vendor (Supplier) *</Text>

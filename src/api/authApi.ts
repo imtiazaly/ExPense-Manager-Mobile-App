@@ -50,4 +50,14 @@ export const authApi = {
     );
     return response.data;
   },
+
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const response = await client.get<{ data: User[] }>('/users');
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      console.log('Error fetching users:', error);
+      return [];
+    }
+  },
 };
