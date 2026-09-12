@@ -54,6 +54,7 @@ export interface BillItem {
 export interface Bill {
   id: number;
   user_id: number;
+  purchaser_name?: string;
   user?: User;
   vendor_id: number;
   bill_number: string;

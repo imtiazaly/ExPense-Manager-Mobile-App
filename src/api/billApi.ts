@@ -16,6 +16,9 @@ export const billApi = {
     search?: string;
     status?: string;
     vendor_id?: number;
+    purchaser_id?: number;
+    from_date?: string;
+    to_date?: string;
     page?: number;
     per_page?: number;
   }): Promise<PaginatedResponse<Bill>> => {
@@ -30,19 +33,14 @@ export const billApi = {
       }
 
       return { data: bills, meta: response.data.meta };
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const cached = await syncService.getCache<Bill[]>(CACHE_KEYS.BILLS);
       let list = cached || [];
       if (params?.status && params.status !== 'all') {
         list = list.filter(b => b.status === params.status);
-      }
-      if (params?.search) {
-        const q = params.search.toLowerCase();
-        list = list.filter(
-          b =>
-            b.bill_number.toLowerCase().includes(q) ||
-            b.vendor?.name.toLowerCase().includes(q),
-        );
       }
       return { data: list, meta: undefined };
     }
@@ -52,7 +50,10 @@ export const billApi = {
     try {
       const response = await client.get<{ data: Bill }>(`/bills/${id}`);
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const cached = await syncService.getCache<Bill[]>(CACHE_KEYS.BILLS);
       const found = (cached || []).find(b => b.id === id);
       if (found) return found;
@@ -61,6 +62,7 @@ export const billApi = {
   },
 
   createBill: async (data: {
+    purchaser_name?: string;
     vendor_id: number;
     bill_number: string;
     bill_date: string;
@@ -74,7 +76,10 @@ export const billApi = {
         (await syncService.getCache<Bill[]>(CACHE_KEYS.BILLS)) || [];
       await syncService.setCache(CACHE_KEYS.BILLS, [newBill, ...cached]);
       return newBill;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const grandTotal = data.items.reduce(
         (acc, curr) => acc + curr.quantity * (curr.unit_price || 0),
         0,
@@ -82,6 +87,7 @@ export const billApi = {
       const tempBill: Bill = {
         id: Date.now(),
         user_id: 1,
+        purchaser_name: data.purchaser_name,
         vendor_id: data.vendor_id,
         bill_number: data.bill_number,
         bill_date: data.bill_date,
@@ -116,7 +122,10 @@ export const billApi = {
       const list = cached.map(b => (b.id === id ? updated : b));
       await syncService.setCache(CACHE_KEYS.BILLS, list);
       return updated;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       await syncService.enqueue('UPDATE_BILL_STATUS', { id, data });
       const cached =
         (await syncService.getCache<Bill[]>(CACHE_KEYS.BILLS)) || [];
@@ -131,7 +140,10 @@ export const billApi = {
   deleteBill: async (id: number): Promise<void> => {
     try {
       await client.delete(`/bills/${id}`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       await syncService.enqueue('DELETE_BILL', { id });
       const cached =
         (await syncService.getCache<Bill[]>(CACHE_KEYS.BILLS)) || [];

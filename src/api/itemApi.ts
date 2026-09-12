@@ -14,7 +14,10 @@ export const itemApi = {
         await syncService.setCache(CACHE_KEYS.ITEMS, items);
       }
       return items;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const cached = await syncService.getCache<Item[]>(CACHE_KEYS.ITEMS);
       let list = cached || [];
       if (params?.search) {
@@ -33,7 +36,10 @@ export const itemApi = {
         (await syncService.getCache<Item[]>(CACHE_KEYS.ITEMS)) || [];
       await syncService.setCache(CACHE_KEYS.ITEMS, [newItem, ...cached]);
       return newItem;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const tempItem: Item = {
         id: Date.now(),
         name: data.name || 'New Item',
@@ -55,7 +61,10 @@ export const itemApi = {
     try {
       const response = await client.put<{ data: Item }>(`/items/${id}`, data);
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       await syncService.enqueue('UPDATE_ITEM', { id, data });
       const cached =
         (await syncService.getCache<Item[]>(CACHE_KEYS.ITEMS)) || [];
@@ -73,7 +82,10 @@ export const itemApi = {
   deleteItem: async (id: number): Promise<void> => {
     try {
       await client.delete(`/items/${id}`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       await syncService.enqueue('DELETE_ITEM', { id });
       const cached =
         (await syncService.getCache<Item[]>(CACHE_KEYS.ITEMS)) || [];

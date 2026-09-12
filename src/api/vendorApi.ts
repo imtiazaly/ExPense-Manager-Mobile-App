@@ -16,8 +16,10 @@ export const vendorApi = {
         await syncService.setCache(CACHE_KEYS.VENDORS, vendors);
       }
       return vendors;
-    } catch (error) {
-      // Offline Fallback to Local Cache
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const cached = await syncService.getCache<Vendor[]>(CACHE_KEYS.VENDORS);
       let list = cached || [];
       if (params?.search) {
@@ -33,14 +35,15 @@ export const vendorApi = {
       const response = await client.post<{ data: Vendor }>('/vendors', data);
       const newVendor = response.data.data;
 
-      // Update Cache
       const cached =
         (await syncService.getCache<Vendor[]>(CACHE_KEYS.VENDORS)) || [];
       await syncService.setCache(CACHE_KEYS.VENDORS, [newVendor, ...cached]);
 
       return newVendor;
-    } catch (error) {
-      // Queue Offline Action & Fake Return for UI
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       const tempVendor: Vendor = {
         id: Date.now(),
         name: data.name || 'New Vendor',
@@ -65,7 +68,10 @@ export const vendorApi = {
         data,
       );
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       await syncService.enqueue('UPDATE_VENDOR', { id, data });
       const cached =
         (await syncService.getCache<Vendor[]>(CACHE_KEYS.VENDORS)) || [];
@@ -78,7 +84,10 @@ export const vendorApi = {
   deleteVendor: async (id: number): Promise<void> => {
     try {
       await client.delete(`/vendors/${id}`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response) {
+        throw error;
+      }
       await syncService.enqueue('DELETE_VENDOR', { id });
       const cached =
         (await syncService.getCache<Vendor[]>(CACHE_KEYS.VENDORS)) || [];

@@ -242,6 +242,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
     try {
       setSubmitting(true);
       await billApi.createBill({
+        purchaser_name: purchaserName.trim(),
         vendor_id: selectedVendorId,
         bill_number: billNumber.trim(),
         bill_date: billDate,
