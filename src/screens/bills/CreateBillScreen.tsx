@@ -45,10 +45,7 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
 
   // Form States
-  const [usersList, setUsersList] = useState<Purchaser[]>([]);
   const [purchaserName, setPurchaserName] = useState(user?.name || '');
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [billNumber, setBillNumber] = useState(
     `INV-${Date.now().toString().slice(-5)}`,
@@ -60,9 +57,13 @@ export const CreateBillScreen: React.FC<Props> = ({ navigation }) => {
     'pending',
   );
   const [lineItems, setLineItems] = useState<LineItemState[]>([]);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Data Fetching States
+  const [loading, setLoading] = useState(false);
+  const [usersList, setUsersList] = useState<Purchaser[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const [itemSearch, setItemSearch] = useState('');
 
   // Collapsible Add Item Form States

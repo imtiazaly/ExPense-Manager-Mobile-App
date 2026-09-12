@@ -7,9 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   RefreshControl,
-  Keyboard,
+  ScrollView,
 } from 'react-native';
 import { Bill } from '../../types';
 import { billApi } from '../../api/billApi';
@@ -17,7 +16,16 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainTabParamList, MainStackParamList } from '../../navigation/types';
-import { Search, Plus, Receipt, Calendar, Trash2 } from 'lucide-react-native';
+import {
+  Search,
+  Plus,
+  Receipt,
+  Calendar,
+  Trash2,
+  User,
+  Building2,
+} from 'lucide-react-native';
+import { showErrorSnackbar, showSuccessSnackbar } from '../../utils/snackbar';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'BillsList'>,
@@ -33,20 +41,6 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', e => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   const fetchBills = async (pageNum = 1, isRefresh = false) => {
     try {
@@ -72,7 +66,7 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
         setHasMore(false);
       }
     } catch (error: any) {
-      console.log('Error fetching bills:', error);
+      showErrorSnackbar('Could not load bills. Try again.');
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -81,9 +75,12 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    setPage(1);
-    fetchBills(1);
-  }, [search, selectedStatus]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      setPage(1);
+      fetchBills(1);
+    });
+    return unsubscribe;
+  }, [navigation, search, selectedStatus]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -100,26 +97,14 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleDelete = (bill: Bill) => {
-    Alert.alert(
-      'Delete Bill',
-      `Are you sure you want to delete Bill #${bill.bill_number}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await billApi.deleteBill(bill.id);
-              fetchBills(1);
-            } catch (error: any) {
-              Alert.alert('Error', 'Could not delete bill.');
-            }
-          },
-        },
-      ],
-    );
+  const handleDelete = async (bill: Bill) => {
+    try {
+      await billApi.deleteBill(bill.id);
+      showSuccessSnackbar(`Bill #${bill.bill_number} deleted successfully.`);
+      fetchBills(1);
+    } catch (error: any) {
+      showErrorSnackbar('Could not delete bill.');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -151,23 +136,36 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate('BillDetail', { billId: item.id })}
+      activeOpacity={0.85}
     >
       <View style={styles.cardTop}>
         <View style={styles.vendorBox}>
-          <Receipt size={18} color="#2563eb" style={{ marginRight: 8 }} />
+          <Receipt size={20} color="#2563eb" style={{ marginRight: 8 }} />
           <View>
-            <Text style={styles.vendorName}>
-              {item.vendor?.name || 'Unknown Vendor'}
-            </Text>
-            <Text style={styles.billNumber}>#{item.bill_number}</Text>
+            <Text style={styles.billNumber}>Bill #{item.bill_number}</Text>
+            <View style={styles.subDetailRow}>
+              <Building2 size={13} color="#64748b" style={{ marginRight: 4 }} />
+              <Text style={styles.vendorName}>
+                Vendor: {item.vendor?.name || 'Supplier'}
+              </Text>
+            </View>
           </View>
         </View>
         {getStatusBadge(item.status)}
       </View>
 
+      <View style={styles.middleRow}>
+        <View style={styles.purchaserRow}>
+          <User size={13} color="#2563eb" style={{ marginRight: 4 }} />
+          <Text style={styles.purchaserText}>
+            Purchaser: {item.user?.name || 'Kharidar'}
+          </Text>
+        </View>
+      </View>
+
       <View style={styles.cardBottom}>
         <View style={styles.dateRow}>
-          <Calendar size={14} color="#64748b" style={{ marginRight: 4 }} />
+          <Calendar size={13} color="#64748b" style={{ marginRight: 4 }} />
           <Text style={styles.dateText}>{item.bill_date}</Text>
         </View>
 
@@ -188,30 +186,42 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchBar}>
-        <Search size={18} color="#64748b" style={{ marginRight: 8 }} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by vendor or bill #..."
-          placeholderTextColor="#94a3b8"
-          value={search}
-          onChangeText={setSearch}
-        />
+      {/* Header Search & Create Button */}
+      <View style={styles.topRow}>
+        <View style={styles.searchBar}>
+          <Search size={18} color="#64748b" style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by bill # or vendor..."
+            placeholderTextColor="#94a3b8"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.createBtn}
+          onPress={() => navigation.navigate('CreateBill')}
+        >
+          <Plus size={20} color="#ffffff" />
+        </TouchableOpacity>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.tabsContainer}>
-        {['all', 'paid', 'unpaid', 'pending'].map(st => (
+      {/* Status Filter Tabs */}
+      <View style={styles.filterRow}>
+        {(['all', 'pending', 'paid', 'unpaid'] as const).map(st => (
           <TouchableOpacity
             key={st}
-            style={[styles.tab, selectedStatus === st && styles.activeTab]}
+            style={[
+              styles.filterPill,
+              selectedStatus === st && styles.activeFilterPill,
+            ]}
             onPress={() => setSelectedStatus(st)}
           >
             <Text
               style={[
-                styles.tabText,
-                selectedStatus === st && styles.activeTabText,
+                styles.filterPillText,
+                selectedStatus === st && styles.activeFilterPillText,
               ]}
             >
               {st.toUpperCase()}
@@ -220,7 +230,7 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
         ))}
       </View>
 
-      {/* Bills List */}
+      {/* Bills FlatList */}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#2563eb" />
@@ -230,118 +240,112 @@ export const BillsListScreen: React.FC<Props> = ({ navigation }) => {
           data={bills}
           keyExtractor={item => item.id.toString()}
           renderItem={renderBillCard}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingBottom: keyboardHeight + 100 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.4}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
           ListFooterComponent={
             loadingMore ? (
-              <View style={{ paddingVertical: 16 }}>
-                <ActivityIndicator size="small" color="#2563eb" />
-              </View>
+              <ActivityIndicator
+                style={{ marginVertical: 16 }}
+                color="#2563eb"
+              />
             ) : undefined
           }
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No bills found</Text>
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>No bills found.</Text>
             </View>
           }
         />
       )}
-
-      {/* Floating Add Bill Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('CreateBill')}
-      >
-        <Plus size={24} color="#ffffff" />
-      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  topRow: { flexDirection: 'row', padding: 16, paddingBottom: 8, gap: 10 },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    marginHorizontal: 16,
-    marginTop: 16,
-    paddingHorizontal: 12,
-    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
     height: 46,
   },
-  searchInput: { flex: 1, color: '#0f172a', fontSize: 15 },
-  tabsContainer: {
+  searchInput: { flex: 1, color: '#0f172a', fontSize: 14 },
+  createBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    marginVertical: 12,
+    paddingBottom: 10,
     gap: 8,
   },
-  tab: {
-    paddingHorizontal: 14,
+  filterPill: {
+    flex: 1,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: '#e2e8f0',
-  },
-  activeTab: { backgroundColor: '#2563eb' },
-  tabText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
-  activeTabText: { color: '#ffffff' },
-  listContent: { paddingHorizontal: 16, gap: 12 },
-  card: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    gap: 12,
+    alignItems: 'center',
+  },
+  activeFilterPill: { backgroundColor: '#1e293b', borderColor: '#1e293b' },
+  filterPillText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+  activeFilterPillText: { color: '#ffffff' },
+  listContent: { padding: 16, paddingTop: 4, gap: 12, paddingBottom: 40 },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 8,
   },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   vendorBox: { flexDirection: 'row', alignItems: 'center' },
-  vendorName: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
-  billNumber: { fontSize: 12, color: '#64748b' },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  billNumber: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  subDetailRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  vendorName: { fontSize: 13, color: '#64748b' },
+  middleRow: {
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  purchaserRow: { flexDirection: 'row', alignItems: 'center' },
+  purchaserText: { fontSize: 12, fontWeight: '600', color: '#1e40af' },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeText: { fontSize: 11, fontWeight: '800' },
   cardBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-    paddingTop: 10,
+    marginTop: 4,
   },
   dateRow: { flexDirection: 'row', alignItems: 'center' },
-  dateText: { fontSize: 13, color: '#64748b' },
-  rightBox: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  amountText: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
+  dateText: { fontSize: 12, color: '#64748b' },
+  rightBox: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  amountText: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
   deleteBtn: { padding: 4 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyState: { alignItems: 'center', padding: 32 },
-  emptyText: { color: '#94a3b8', fontSize: 16 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#2563eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-  },
+  emptyBox: { padding: 30, alignItems: 'center' },
+  emptyText: { color: '#94a3b8', fontSize: 14 },
 });

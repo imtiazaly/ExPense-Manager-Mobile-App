@@ -6,7 +6,6 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { Bill } from '../../types';
 import { billApi } from '../../api/billApi';
@@ -25,6 +24,7 @@ import {
   XCircle,
   Clock,
 } from 'lucide-react-native';
+import { showErrorSnackbar, showSuccessSnackbar } from '../../utils/snackbar';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'BillDetail'>;
 
@@ -40,7 +40,7 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       const data = await billApi.getBillDetails(billId);
       setBill(data);
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to load bill details.');
+      showErrorSnackbar('Failed to load bill details.');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -66,38 +66,25 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       });
 
       setBill(updated);
-      Alert.alert(
-        'Status Updated',
+      showSuccessSnackbar(
         `Bill #${bill.bill_number} marked as ${newStatus.toUpperCase()}`,
       );
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to update bill status.');
+      showErrorSnackbar('Failed to update bill status.');
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!bill) return;
-    Alert.alert(
-      'Delete Bill',
-      `Are you sure you want to delete Bill #${bill.bill_number}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await billApi.deleteBill(bill.id);
-              navigation.goBack();
-            } catch (e) {
-              Alert.alert('Error', 'Could not delete bill.');
-            }
-          },
-        },
-      ],
-    );
+    try {
+      await billApi.deleteBill(bill.id);
+      showSuccessSnackbar('Bill record deleted.');
+      navigation.goBack();
+    } catch (e) {
+      showErrorSnackbar('Could not delete bill.');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -149,6 +136,23 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <Calendar size={16} color="#64748b" style={{ marginRight: 6 }} />
           <Text style={styles.dateText}>Date: {bill.bill_date}</Text>
         </View>
+      </View>
+
+      {/* Purchaser Card */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Purchaser Details (Kharidar)</Text>
+        <View style={styles.infoRow}>
+          <User size={18} color="#2563eb" />
+          <Text style={styles.purchaserName}>
+            {bill.user?.name || 'Purchaser'}
+          </Text>
+        </View>
+        {bill.user?.email && (
+          <View style={styles.infoRow}>
+            <Mail size={14} color="#64748b" />
+            <Text style={styles.infoText}>{bill.user.email}</Text>
+          </View>
+        )}
       </View>
 
       {/* Quick Status Action Card */}
@@ -238,11 +242,11 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {/* Vendor Details Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Vendor Information</Text>
+        <Text style={styles.sectionTitle}>Vendor Information (Supplier)</Text>
         {bill.vendor ? (
           <View style={styles.vendorDetails}>
             <View style={styles.infoRow}>
-              <User size={16} color="#64748b" />
+              <Building2 size={16} color="#64748b" />
               <Text style={styles.vendorName}>{bill.vendor.name}</Text>
             </View>
 
@@ -309,7 +313,7 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 {item.quantity}
               </Text>
               <Text style={[styles.td, { flex: 1, textAlign: 'right' }]}>
-                {Number(item.unit_price).toLocaleString()}
+                RS {Number(item.unit_price).toLocaleString()}
               </Text>
               <Text
                 style={[
@@ -317,7 +321,7 @@ export const BillDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   { flex: 1.2, textAlign: 'right', fontWeight: '700' },
                 ]}
               >
-                {Number(item.total_price).toLocaleString()}
+                RS {Number(item.total_price).toLocaleString()}
               </Text>
             </View>
           ))
@@ -365,6 +369,7 @@ const styles = StyleSheet.create({
   dateRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   dateText: { fontSize: 14, color: '#64748b' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  purchaserName: { fontSize: 15, fontWeight: '700', color: '#1e40af' },
   statusButtonsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   statusBtn: {
     flex: 1,
